@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#111827" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SurveyGPS" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <title>SurveyApp GPS</title>
+</head>
+<body>
+  <header>
+    <div class="title">SurveyApp GPS</div>
+    <div class="subtitle">道路測量・GPS杭出し・平面直角座標</div>
+  </header>
+
+  <nav class="jumpbar" aria-label="機能移動">
+    <a href="#gps">GPS</a><a href="#points">測点</a><a href="#stakeout">杭出し</a><a href="#curve">単曲線</a><a href="#profile">縦断</a>
+  </nav>
+
+  <main>
+    <section class="card" id="gps">
+      <h2>GPS・平面直角座標</h2>
+      <div class="grid2">
+        <label>平面直角座標系
+          <select id="zone"></select>
+        </label>
+        <label>GPS更新
+          <select id="gpsMode"><option value="watch">連続</option><option value="once">1回</option></select>
+        </label>
+      </div>
+      <div class="actions3">
+        <button class="primary" id="startGps">GPS開始</button>
+        <button id="stopGps">GPS停止</button>
+        <button id="startCompass">コンパス開始</button>
+      </div>
+      <div id="gpsStatus" class="status">GPS停止中</div>
+      <div class="metricGrid">
+        <div class="metric"><span>緯度</span><strong id="gpsLat">-</strong></div>
+        <div class="metric"><span>経度</span><strong id="gpsLon">-</strong></div>
+        <div class="metric"><span>精度</span><strong id="gpsAcc">-</strong></div>
+        <div class="metric"><span>GPS高度</span><strong id="gpsAlt">-</strong></div>
+        <div class="metric"><span>X（北）</span><strong id="gpsX">-</strong></div>
+        <div class="metric"><span>Y（東）</span><strong id="gpsY">-</strong></div>
+      </div>
+      <p class="warning">iPhone内蔵GPSは概略位置用です。杭出し・出来形など高精度測量の代替にはしないでください。GPS高度も測量標高とは異なる場合があります。</p>
+      <button id="saveGpsPoint">現在地を測点保存</button>
+    </section>
+
+    <section class="card">
+      <h2>現場マップ</h2>
+      <canvas id="fieldMap" width="700" height="480" aria-label="現在地と目的点の現場マップ"></canvas>
+      <div class="legend"><span>● 現在地</span><span>＋ 目的点</span><span>○ 保存測点</span></div>
+      <div class="actions">
+        <button id="openAppleMaps">現在地をAppleマップで開く</button>
+        <button id="centerMap">マップ再描画</button>
+      </div>
+      <p class="hint">内蔵マップは座標関係を見るための簡易図です。背景地図はAppleマップで確認できます。</p>
+    </section>
+
+    <section class="card" id="points">
+      <h2>測点登録</h2>
+      <div class="grid2">
+        <label>測点名<input id="ptName" value="No.1" /></label>
+        <label>X（北）<input id="ptX" inputmode="decimal" /></label>
+        <label>Y（東）<input id="ptY" inputmode="decimal" /></label>
+        <label>Z（標高）<input id="ptZ" inputmode="decimal" /></label>
+      </div>
+      <button class="primary" id="addPoint">測点を保存</button>
+      <div id="pointsList" class="result small"></div>
+    </section>
+
+    <section class="card" id="stakeout">
+      <h2>GPS杭出し</h2>
+      <div class="grid2">
+        <label>目的点
+          <select id="targetPoint"></select>
+        </label>
+        <label>目的点名<input id="targetName" value="杭出し点" /></label>
+        <label>目的X（北）<input id="targetX" inputmode="decimal" /></label>
+        <label>目的Y（東）<input id="targetY" inputmode="decimal" /></label>
+      </div>
+      <div class="actions">
+        <button id="loadTarget">保存測点を読込</button>
+        <button class="primary" id="setTarget">目的点を設定</button>
+      </div>
+      <div class="stakeHero">
+        <div><span>残り距離</span><strong id="stakeDistance">-</strong></div>
+        <div><span>目的方向角</span><strong id="stakeAz">-</strong></div>
+        <div><span>端末向きとの差</span><strong id="stakeTurn">-</strong></div>
+      </div>
+      <div id="stakeDetail" class="result"></div>
+      <p class="hint">方向角はX軸（北）0°から時計回り。端末向きはSafariのコンパス許可が得られた場合のみ表示します。</p>
+    </section>
+
+    <section class="card">
+      <h2>緯度経度 ⇄ 平面直角座標</h2>
+      <div class="grid2">
+        <label>緯度（十進度）<input id="convLat" inputmode="decimal" placeholder="36.000000" /></label>
+        <label>経度（十進度）<input id="convLon" inputmode="decimal" placeholder="136.000000" /></label>
+        <label>X（北）<input id="convX" inputmode="decimal" /></label>
+        <label>Y（東）<input id="convY" inputmode="decimal" /></label>
+      </div>
+      <div class="actions">
+        <button class="primary" id="llToXy">緯度経度 → X/Y</button>
+        <button id="xyToLl">X/Y → 緯度経度</button>
+      </div>
+      <div id="convResult" class="result"></div>
+    </section>
+
+    <section class="card">
+      <h2>2点間計算</h2>
+      <div class="grid2">
+        <label>点A<select id="pA"></select></label>
+        <label>点B<select id="pB"></select></label>
+      </div>
+      <button class="primary" id="calcPair">計算</button>
+      <div id="pairResult" class="result"></div>
+    </section>
+
+    <section class="card">
+      <h2>逆打ち・オフセット</h2>
+      <div class="grid2">
+        <label>基準X<input id="baseX" inputmode="decimal" /></label>
+        <label>基準Y<input id="baseY" inputmode="decimal" /></label>
+        <label>方向角（°）<input id="az" inputmode="decimal" /></label>
+        <label>前後距離（m）<input id="along" inputmode="decimal" /></label>
+        <label>左右オフセット（m）<input id="offset" inputmode="decimal" placeholder="右＋ / 左−" /></label>
+      </div>
+      <button class="primary" id="calcStake">座標計算</button>
+      <div id="stakeResult" class="result"></div>
+    </section>
+
+    <section class="card">
+      <h2>面積計算</h2>
+      <p class="hint">X,Yを1行1点で入力（例 1000.000,500.000）</p>
+      <textarea id="poly" rows="6" placeholder="1000,500\n1010,500\n1010,510\n1000,510"></textarea>
+      <button class="primary" id="calcArea">面積計算</button>
+      <div id="areaResult" class="result"></div>
+    </section>
+
+    <section class="card" id="curve">
+      <h2>単曲線</h2>
+      <div class="grid2">
+        <label>BC X<input id="bcX" inputmode="decimal" /></label>
+        <label>BC Y<input id="bcY" inputmode="decimal" /></label>
+        <label>BC接線方向角（°）<input id="bcAz" inputmode="decimal" /></label>
+        <label>半径 R（m）<input id="radius" inputmode="decimal" /></label>
+        <label>BC測点距離（m）<input id="bcSta" inputmode="decimal" value="0" /></label>
+        <label>計算測点距離（m）<input id="targetSta" inputmode="decimal" /></label>
+        <label>左幅員（m）<input id="leftW" inputmode="decimal" value="3.25" /></label>
+        <label>右幅員（m）<input id="rightW" inputmode="decimal" value="3.25" /></label>
+        <label>カーブ<select id="curveDir"><option value="R">右</option><option value="L">左</option></select></label>
+      </div>
+      <button class="primary" id="calcCurve">単曲線計算</button>
+      <div id="curveResult" class="result"></div>
+    </section>
+
+    <section class="card" id="profile">
+      <h2>縦断計算</h2>
+      <div class="grid2">
+        <label>基準測点距離（m）<input id="gradeSta0" inputmode="decimal" value="0" /></label>
+        <label>基準計画高（m）<input id="gradeZ0" inputmode="decimal" /></label>
+        <label>縦断勾配（%）<input id="gradePct" inputmode="decimal" /></label>
+        <label>計算測点距離（m）<input id="gradeTarget" inputmode="decimal" /></label>
+        <label>現況高（m・任意）<input id="existingZ" inputmode="decimal" /></label>
+      </div>
+      <button class="primary" id="calcGrade">一定勾配計算</button>
+      <div id="gradeResult" class="result"></div>
+    </section>
+
+    <section class="card">
+      <h2>縦断曲線</h2>
+      <div class="grid2">
+        <label>VPI測点距離（m）<input id="vpiSta" inputmode="decimal" /></label>
+        <label>VPI計画高（m）<input id="vpiZ" inputmode="decimal" /></label>
+        <label>進入勾配 g1（%）<input id="g1" inputmode="decimal" /></label>
+        <label>退出勾配 g2（%）<input id="g2" inputmode="decimal" /></label>
+        <label>VCL（m）<input id="vcl" inputmode="decimal" /></label>
+        <label>計算測点距離（m）<input id="vTarget" inputmode="decimal" /></label>
+        <label>現況高（m・任意）<input id="vExisting" inputmode="decimal" /></label>
+      </div>
+      <button class="primary" id="calcVCurve">縦断曲線計算</button>
+      <div id="vCurveResult" class="result"></div>
+    </section>
+
+    <section class="card">
+      <h2>データ出力</h2>
+      <div class="actions">
+        <button id="exportCsv">測点CSVを保存</button>
+        <button id="clearAll" class="danger">保存データを削除</button>
+      </div>
+      <p class="hint">GPS利用にはHTTPSでの公開とSafariの位置情報許可が必要です。</p>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
